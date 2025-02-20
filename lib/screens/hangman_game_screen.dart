@@ -1,7 +1,12 @@
-import 'package:flutter/material.dart';
 import 'dart:math';
+
+import 'package:flutter/material.dart';
+
 import '../models/word_data.dart';
+import '../widgets/game_over_dialog_widget.dart';
 import '../widgets/hangman_painter.dart';
+import '../widgets/keyboard_widget.dart';
+import '../widgets/word_display_widget.dart';
 
 class HangmanGame extends StatefulWidget {
   const HangmanGame({super.key});
@@ -67,84 +72,28 @@ class _HangmanGameState extends State<HangmanGame> {
   }
 
   Widget buildWord() {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children:
-          currentWord.word.split('').map((letter) {
-            final index = currentWord.word.indexOf(letter);
-            return Container(
-              margin: const EdgeInsets.symmetric(horizontal: 4),
-              child: Text(
-                guessedLetters[index] ? letter : '_',
-                style: const TextStyle(
-                  fontSize: 32,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            );
-          }).toList(),
+    return WordDisplayWidget(
+      word: currentWord.word,
+      description: currentWord.description,
+      guessedLetters: guessedLetters,
     );
   }
 
   Widget buildKeyboard() {
-    return Wrap(
-      alignment: WrapAlignment.center,
-      spacing: 8,
-      runSpacing: 8,
-      children: List.generate(26, (index) {
-        final letter = String.fromCharCode(65 + index);
-        final isUsed = triedLetters.contains(letter);
-        return AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
-          child: ElevatedButton(
-            onPressed:
-                isUsed || isGameLost() || isGameWon()
-                    ? null
-                    : () => guessLetter(letter),
-            style: ElevatedButton.styleFrom(
-              minimumSize: const Size(45, 45),
-              padding: EdgeInsets.zero,
-              disabledBackgroundColor: Colors.grey.shade200,
-              disabledForegroundColor: Colors.grey.shade400,
-            ).copyWith(
-              elevation: isUsed ? MaterialStateProperty.all(0) : MaterialStateProperty.resolveWith(
-                (states) => states.contains(MaterialState.pressed) ? 2 : 4,
-              ),
-            ),
-            child: Text(
-              letter,
-              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
-          ),
-        );
-      }),
+    return KeyboardWidget(
+      triedLetters: triedLetters,
+      isGameOver: isGameLost() || isGameWon(),
+      onLetterPressed: guessLetter,
     );
   }
 
   Widget buildGameOverDialog() {
     if (!isGameWon() && !isGameLost()) return const SizedBox.shrink();
-    
-    return AlertDialog(
-      title: Text(
-        isGameWon() ? 'Congratulations!' : 'Game Over',
-        style: TextStyle(
-          color: isGameWon() ? Colors.green : Colors.red,
-          fontWeight: FontWeight.bold,
-        ),
-      ),
-      content: Text(
-        isGameWon()
-            ? 'You won the game!'
-            : 'The word was: ${currentWord.word}',
-        style: const TextStyle(fontSize: 18),
-      ),
-      actions: [
-        ElevatedButton(
-          onPressed: () => setState(() => startNewGame()),
-          child: const Text('Play Again'),
-        ),
-      ],
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+
+    return GameOverDialogWidget(
+      isWon: isGameWon(),
+      word: currentWord.word,
+      onPlayAgain: () => setState(() => startNewGame()),
     );
   }
 
@@ -198,11 +147,7 @@ class _HangmanGameState extends State<HangmanGame> {
               ),
             ),
           ),
-          if (isGameWon() || isGameLost())
-            Container(
-              color: Colors.black54,
-              child: Center(child: buildGameOverDialog()),
-            ),
+          if (isGameWon() || isGameLost()) buildGameOverDialog(),
         ],
       ),
     );

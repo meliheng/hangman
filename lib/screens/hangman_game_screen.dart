@@ -1,12 +1,9 @@
-import 'dart:math';
-
 import 'package:flutter/material.dart';
-
-import '../models/word_data.dart';
-import '../widgets/game_over_dialog_widget.dart';
+import '../constants/strings.dart';
 import '../widgets/hangman_painter.dart';
 import '../widgets/keyboard_widget.dart';
 import '../widgets/word_display_widget.dart';
+import '../mixins/hangman_game_mixin.dart';
 
 class HangmanGame extends StatefulWidget {
   const HangmanGame({super.key});
@@ -15,55 +12,7 @@ class HangmanGame extends StatefulWidget {
   State<HangmanGame> createState() => _HangmanGameState();
 }
 
-class _HangmanGameState extends State<HangmanGame> {
-  late WordData currentWord;
-  late List<bool> guessedLetters;
-  Set<String> triedLetters = {};
-  int wrongGuesses = 0;
-  final int maxWrongGuesses = 6;
-
-  @override
-  void initState() {
-    super.initState();
-    startNewGame();
-  }
-
-  void startNewGame() {
-    final random = Random();
-    currentWord = wordList[random.nextInt(wordList.length)];
-    guessedLetters = List.filled(currentWord.word.length, false);
-    triedLetters = {};
-    wrongGuesses = 0;
-  }
-
-  void guessLetter(String letter) {
-    if (triedLetters.contains(letter)) return;
-
-    setState(() {
-      triedLetters.add(letter);
-      bool found = false;
-
-      for (int i = 0; i < currentWord.word.length; i++) {
-        if (currentWord.word[i] == letter) {
-          guessedLetters[i] = true;
-          found = true;
-        }
-      }
-
-      if (!found) {
-        wrongGuesses++;
-      }
-    });
-  }
-
-  bool isGameWon() {
-    return guessedLetters.every((letter) => letter);
-  }
-
-  bool isGameLost() {
-    return wrongGuesses >= maxWrongGuesses;
-  }
-
+class _HangmanGameState extends State<HangmanGame> with HangmanGameMixin {
   Widget buildHangman() {
     return CustomPaint(
       size: const Size(200, 250),
@@ -82,18 +31,8 @@ class _HangmanGameState extends State<HangmanGame> {
   Widget buildKeyboard() {
     return KeyboardWidget(
       triedLetters: triedLetters,
-      isGameOver: isGameLost() || isGameWon(),
+      isGameOver: isGameLost || isGameWon,
       onLetterPressed: guessLetter,
-    );
-  }
-
-  Widget buildGameOverDialog() {
-    if (!isGameWon() && !isGameLost()) return const SizedBox.shrink();
-
-    return GameOverDialogWidget(
-      isWon: isGameWon(),
-      word: currentWord.word,
-      onPlayAgain: () => setState(() => startNewGame()),
     );
   }
 
@@ -102,9 +41,9 @@ class _HangmanGameState extends State<HangmanGame> {
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Theme.of(context).colorScheme.primaryContainer,
-        title: const Text(
-          'Hangman Game',
-          style: TextStyle(fontWeight: FontWeight.bold),
+        title: Text(
+          AppStrings.appTitle,
+          style: const TextStyle(fontWeight: FontWeight.bold),
         ),
         centerTitle: true,
         elevation: 2,
@@ -114,7 +53,7 @@ class _HangmanGameState extends State<HangmanGame> {
             child: IconButton(
               icon: const Icon(Icons.refresh),
               onPressed: () => setState(() => startNewGame()),
-              tooltip: 'New Game',
+              tooltip: AppStrings.newGameTooltip,
             ),
           ),
         ],
@@ -135,11 +74,16 @@ class _HangmanGameState extends State<HangmanGame> {
                   ),
                   buildWord(),
                   Text(
-                    'Wrong Guesses: $wrongGuesses/$maxWrongGuesses',
+                    AppStrings.wrongGuessesFormat
+                        .replaceAll('%d', wrongGuesses.toString())
+                        .replaceAll('%d', maxWrongGuesses.toString()),
                     style: const TextStyle(fontSize: 18),
                   ),
                   Text(
-                    'Tried Letters: ${triedLetters.join(", ")}',
+                    AppStrings.triedLettersFormat.replaceAll(
+                      '%s',
+                      triedLetters.join(", "),
+                    ),
                     style: const TextStyle(fontSize: 16),
                   ),
                   buildKeyboard(),
@@ -147,7 +91,7 @@ class _HangmanGameState extends State<HangmanGame> {
               ),
             ),
           ),
-          if (isGameWon() || isGameLost()) buildGameOverDialog(),
+          if (isGameWon || isGameLost) buildGameOverDialog(),
         ],
       ),
     );

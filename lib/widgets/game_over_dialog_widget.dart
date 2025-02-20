@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../constants/strings.dart';
 
 class GameOverDialogWidget extends StatelessWidget {
   final bool isWon;
@@ -19,23 +20,27 @@ class GameOverDialogWidget extends StatelessWidget {
       child: Center(
         child: AlertDialog(
           title: Text(
-            isWon ? 'Congratulations!' : 'Game Over',
+            isWon ? AppStrings.congratulationsTitle : AppStrings.gameOverTitle,
             style: TextStyle(
               color: isWon ? Colors.green : Colors.red,
               fontWeight: FontWeight.bold,
             ),
           ),
           content: Text(
-            isWon ? 'You won the game!' : 'The word was: $word',
+            isWon
+                ? AppStrings.youWonMessage
+                : AppStrings.wordWasFormat.replaceAll('%s', word),
             style: const TextStyle(fontSize: 18),
           ),
           actions: [
             ElevatedButton(
               onPressed: onPlayAgain,
-              child: const Text('Play Again'),
+              child: Text(AppStrings.playAgainButton),
             ),
           ],
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(15),
+          ),
         ),
       ),
     );
